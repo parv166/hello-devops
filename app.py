@@ -1,7 +1,12 @@
 
+import os
+
 from flask import Flask, render_template_string, jsonify
 
 app = Flask(__name__)
+APP_ENV = os.getenv("APP_ENV", "development")
+APP_TAGLINE = os.getenv("APP_TAGLINE", "My Kubernetes Homelab")
+app.config["SECRET_KEY"] = os.getenv("FLASK_SECRET_KEY")
 
 HTML = """
 <!DOCTYPE html>
@@ -217,7 +222,7 @@ HTML = """
         </nav>
 
         <section class="hero">
-            <div class="tag">My Kubernetes Homelab</div>
+            <div class="tag">{{ app_tagline }}</div>
 
             <h1>
                 Hello, <span>World!</span>
@@ -262,13 +267,14 @@ HTML = """
 
 @app.route("/")
 def home():
-    return render_template_string(HTML)
+    return render_template_string(HTML, app_tagline=APP_TAGLINE)
 
 
 @app.route("/health")
 def health():
     return jsonify({
         "status": "healthy",
+        "environment": APP_ENV,
         "application": "Hello DevOps",
         "message": "Application is running successfully"
     })
