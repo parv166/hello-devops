@@ -1,0 +1,33 @@
+replicaCount: 1
+
+image:
+  repository: hello-devops
+  tag: k8s-config-v1
+  pullPolicy: Never
+
+config:
+  appEnv: kubernetes
+  appTagline: "Configuration loaded from Kubernetes"
+
+secret:
+  existingName: hello-devops-secret
+
+service:
+  type: NodePort
+  port: 80
+  targetPort: http
+  nodePort: 30080
+
+ingress:
+  enabled: true
+  className: traefik
+  host: hello.local
+  path: /
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
