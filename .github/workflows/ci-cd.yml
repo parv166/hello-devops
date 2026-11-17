@@ -1,0 +1,74 @@
+
+name: Hello DevOps CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_NAME: ghcr.io/parv166/hello-devops
+
+jobs:
+  build-test-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v7
+
+      - name: Build Docker image
+        run: |
+          docker build -t local/hello-devops:${GITHUB_SHA} .
+
+      - name: Start application
+        run: |
+          docker run -d \
+            --name hello-devops-test \
+            -p 5000:5000 \
+            local/hello-devops:${GITHUB_SHA}
+
+      - name: Test application health
+        run: |
+          for i in {1..20}; do
+            if curl --fail --silent http://localhost:5000/health; then
+              echo
+              exit 0
+            fi
+            sleep 2
+          done
+
+          docker logs hello-devops-test
+          exit 1
+
+      - name: Scan Docker image with Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: local/hello-devops:${{ github.sha }}
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL
+
+      - name: Login to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push image to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          docker tag local/hello-devops:${GITHUB_SHA} $IMAGE_NAME:${GITHUB_SHA}
+          docker tag local/hello-devops:${GITHUB_SHA} $IMAGE_NAME:latest
+
+          docker push $IMAGE_NAME:${GITHUB_SHA}
+          docker push $IMAGE_NAME:latest
