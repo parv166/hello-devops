@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hello-devops
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-devops
+  namespace: hello-devops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-devops
+  template:
+    metadata:
+      labels:
+        app: hello-devops
+    spec:
+      containers:
+        - name: app
+          image: hello-devops:k8s
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 5000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-devops
+  namespace: hello-devops
+spec:
+  type: NodePort
+  selector:
+    app: hello-devops
+  ports:
+    - port: 80
+      targetPort: http
+      nodePort: 30080
