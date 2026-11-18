@@ -13,7 +13,7 @@ image:
 
 config:
   appEnv: kubernetes
-  appTagline: "Configuration loaded from Kubernetes"
+  appTagline: "GitOps deployment managed by Argo CD"
 
 secret:
   existingName: hello-devops-secret
