@@ -1,4 +1,4 @@
-name: Hello DevOps CI
+name: Hello DevOps CI/CD
 
 on:
   push:
@@ -17,6 +17,30 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v7
 
+      # Helm validation
+      - name: Setup Helm
+        uses: azure/setup-helm@v5.1.0
+        with:
+          version: v4.3.2
+
+      - name: Lint Helm chart
+        run: helm lint helm/hello-devops
+
+      - name: Render and validate Helm templates
+        run: |
+          helm template hello-devops ./helm/hello-devops \
+            --namespace hello-devops \
+            > /tmp/hello-devops-rendered.yaml
+
+          for resource in Deployment Service ConfigMap Ingress HorizontalPodAutoscaler; do
+            if ! grep -q "^kind: ${resource}$" /tmp/hello-devops-rendered.yaml; then
+              echo "ERROR: Missing rendered resource: ${resource}"
+              exit 1
+            fi
+            echo "Validated: ${resource}"
+          done
+
+      # Docker build and application test
       - name: Build Docker image
         run: docker build -t local/hello-devops:${GITHUB_SHA} .
 
@@ -40,6 +64,7 @@ jobs:
           docker logs hello-devops-test
           exit 1
 
+      # Security scanning
       - name: Scan Docker image with Trivy
         uses: aquasecurity/trivy-action@v0.36.0
         with:
