@@ -225,7 +225,7 @@ HTML = """
             <div class="tag">{{ app_tagline }}</div>
 
             <h1>
-                Hello, <span>World!</span>
+                Hello, <span>GitOps!</span>
             </h1>
 
             <p class="description">
