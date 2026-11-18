@@ -7,9 +7,9 @@ autoscaling:
   targetCPUUtilizationPercentage: 60
 
 image:
-  repository: hello-devops
-  tag: k8s-config-v1
-  pullPolicy: Never
+  repository: ghcr.io/parv166/hello-devops
+  tag: "1.0.3"
+  pullPolicy: IfNotPresent
 
 config:
   appEnv: kubernetes
