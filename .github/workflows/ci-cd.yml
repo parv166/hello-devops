@@ -1,3 +1,4 @@
+
 name: Hello DevOps CI/CD
 
 on:
@@ -8,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
   build-test-scan:
@@ -18,7 +20,6 @@ jobs:
         uses: actions/checkout@v7
 
       # Helm validation
-      
       - name: Render and validate Helm templates
         run: |
           set -e
@@ -58,7 +59,6 @@ jobs:
 
           echo "Validated: HPA enabled when requested"
 
-
       # Docker build and application test
       - name: Build Docker image
         run: docker build -t local/hello-devops:${GITHUB_SHA} .
@@ -93,3 +93,30 @@ jobs:
           ignore-unfixed: true
           vuln-type: os,library
           severity: CRITICAL
+
+      # Publish only after tests and security scanning pass
+      - name: Log in to GitHub Container Registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io \
+            -u "${{ github.actor }}" --password-stdin
+
+      - name: Tag image for GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          IMAGE_NAME="ghcr.io/${GITHUB_REPOSITORY,,}"
+
+          docker tag local/hello-devops:${GITHUB_SHA} \
+            "${IMAGE_NAME}:${GITHUB_SHA}"
+
+          docker tag local/hello-devops:${GITHUB_SHA} \
+            "${IMAGE_NAME}:latest"
+
+      - name: Push image to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          IMAGE_NAME="ghcr.io/${GITHUB_REPOSITORY,,}"
+
+          docker push "${IMAGE_NAME}:${GITHUB_SHA}"
+          docker push "${IMAGE_NAME}:latest"
+
