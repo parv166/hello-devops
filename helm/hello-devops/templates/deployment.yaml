@@ -17,6 +17,8 @@ spec:
       labels:
         app: {{ .Release.Name }}
         {{- include "hello-devops.labels" . | nindent 8 }}
+      annotations:
+         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       affinity:
         podAntiAffinity:
