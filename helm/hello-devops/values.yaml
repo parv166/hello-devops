@@ -11,7 +11,7 @@ imagePullSecrets:
 
 image:
   repository: ghcr.io/parv166/hello-devops
-  tag: "bb968a8a613049ce684fedc796c981d6e6e40c68"
+  tag: "6ae0dbc507080f0472222492831e6c4a192c65c3"
   pullPolicy: IfNotPresent
 
 config:
