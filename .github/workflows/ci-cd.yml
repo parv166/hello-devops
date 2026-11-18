@@ -8,7 +8,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 jobs:
@@ -120,3 +120,24 @@ jobs:
           docker push "${IMAGE_NAME}:${GITHUB_SHA}"
           docker push "${IMAGE_NAME}:latest"
 
+      # Update Helm values to trigger Argo CD deployment
+      - name: Update Helm image tag
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          IMAGE_TAG="${GITHUB_SHA}"
+
+          sed -i "s/tag: \".*\"/tag: \"${IMAGE_TAG}\"/" \
+            helm/hello-devops/values.yaml
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add helm/hello-devops/values.yaml
+
+          if git diff --cached --quiet; then
+            echo "No Helm image tag changes."
+            exit 0
+          fi
+
+          git commit -m "chore(gitops): deploy image ${IMAGE_TAG} [skip ci]"
+          git push origin HEAD:main
